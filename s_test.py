@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[69]:
 
 
 from Bio.Blast import NCBIXML 
@@ -21,7 +21,7 @@ import mysql.connector as SQLC
 import mysql.connector
 
 
-# In[3]:
+# In[70]:
 
 
 DataBase = SQLC.connect(
@@ -57,7 +57,7 @@ if just_seq == []:
         print('nenhuma seq inferior a esse tamanho, pesquise de novo.')
 
 
-# In[4]:
+# In[71]:
 
 
 list_seq=[]
@@ -122,7 +122,7 @@ print(s1_)
 
 # __Goal__ Implementation of sequence manipulation algorithms: transcription, translation, ORFs, extraction of all potential proteins
 
-# In[5]:
+# In[72]:
 
 
 #function that allows us to associate a codon with an amino acid- Human
@@ -153,22 +153,24 @@ def translate_codon(cod):
 translate_codon("xbt")
 
 
-# In[6]:
+# In[73]:
 
 
 #talvez colocar mais possibilidade porque eu penso que a tradução muda para cada organismo??
 
 
-# In[7]:
+# In[96]:
 
 
 #a class that allows to accomplish the objective
 class sequence_info:
     #"building block", where you always have to have the sequence you are analyzing and the type of molecule: dna, rna, protein
     def __init__(self,sequence:s1_, sequence_type:choose2):
+        if sequence_type not in ["DNA","RNA","PROTEIN"]:
+            raise ValueError("Invalid sequence type")
         self.sequence=sequence.upper() #uppercase sequence as a universal rule
         self.sequence_type=sequence_type
-    def __length__(self):
+    def __len__(self):
         return len(self.sequence)
     def __getitem__(self,n):
         return self.sequence[n]
@@ -183,7 +185,7 @@ class sequence_info:
         if (self.sequence_type=="DNA"): return "ACGT"
         elif(self.sequence_type=="RNA"):return "ACGU"
         elif(self.sequence_type=="PROTEIN"): return "ACDEFGHIKLMNPQRSTVWY"
-        else: return "ERROR"
+        else: raise ValueError("ERROR")
     def validate(self): #validates information about the type of molecule associated with the sequence
         letras=self.letters()
         res=True
@@ -191,15 +193,16 @@ class sequence_info:
         while i<len(self.sequence) and res:
             if self.sequence[i] not in letras: res = False
             else: i +=1
-        return res
-    def contagem(self):#know which nucleotides are the most frequent amino acids
+        if res==False:
+            raise ValueError("Put the right name of a molecule")
+        else: return res 
+    def contagem(self):
         contagem={}
         for x in self.sequence:
             contagem[x]=contagem.get(x,0)+1
-            for c in sorte(contagem):
-                return c, contagem [c]       
+        return sorted(contagem.items(), key=lambda x: x[1], reverse=True)      
     def reverse_complement(self):#falta comprovar isto
-        if (self.sequence_type != "DNA"):return "only do reverse complement with DNA"
+        if (self.validate() == False) or (self.sequence_type in ["RNA","PROTEIN"]) :return "only do reverse complement with DNA"
         t=self.sequence.replace("T","a")
         g=t.replace("G","c")
         c=g.replace("C","g")
@@ -207,21 +210,21 @@ class sequence_info:
         reverse_comp=a[::-1]
         return reverse_comp.upper()    
     def transcription(self):
-        if (self.sequence_type=="DNA"): return sequence_info(self.sequence.replace("T","U"),"RNA")
-        else:return "only do transcription with DNA"
+        if (self.validate() == False) or (self.sequence_type != "DNA"):return "only do transcription with DNA"
+        else: return  sequence_info(self.sequence.replace("T","U"),"RNA")
     def translate(self):
-        #if (self.sequence_type != "DNA"): return "only want to do translation with DNA"
+        if (self.validate() == False) or (self.sequence_type != "DNA"): return "only want to do translation with DNA"
         sequence_aa=""
         for x in range(0, len(self.sequence)-2,3):#3 by 3
             codon=self.sequence[x:x+3]
             sequence_aa += translate_codon(codon)
         return sequence_aa
     def get_orfs_DNA(self): #6 possible orfs
-        if (self.sequence_type != "DNA"): return "only want DNA orf"
+        if (self.validate() == False) or (self.sequence_type != "DNA"): return "only want DNA orf"
         inverse_sequence=self.sequence[::-1]
         return ",".join([self.sequence[p:]for p in range(3)] + [inverse_sequence[p:] for p in range(3)]) 
     def get_orfs_Proteins(self): # translation of the 6 possible dna orfs
-        if (self.sequence_type != "DNA"): return "just work from dna orf"
+        if (self.validate() == False) or (self.sequence_type != "DNA"): return "just work from dna orf"
         inverse_sequence=self.sequence[::-1]
         orfs_protein=[]
         for p in range(3):
@@ -247,24 +250,29 @@ class sequence_info:
  #if name=main é para conseguir importar direitinho os nodulos ou seja quanto estou neste ficheiro o name =main e ele faz a classe se for para outro ficheiro e importar a classe ele faz na mesma a classe sem repetir tufo o que aqui tenho
 # https://www.youtube.com/watch?v=3dHyS1W4TIE
 if __name__ == "__main__":
-    s1_="CAACACGGGAAACCTCACCC"
+    s1_="AA??"
     s1 = sequence_info(s1_,choose2)
     s2 = sequence_info("MKVVLSVQERSVVSLL_", "PROTEIN")
-    s3 = sequence_info("ATTTTBTT","PROTEIN")
-    print("sequence 1 is {}? {}".format(s1.sequence_type,s1.validate()))
-    print(s1)
-    s3 = s1.transcription()
+    #s3 = sequence_info("ATTTTBTT","PROTEIN")
+    #print("sequence 1 is {}? {}".format(s1.sequence_type,s1.validate()))
+    s3 = s1.validate()
     print(s3)
-    s4 = s1.reverse_complement()
-    print(s4)
-    s5= s1.translate()
-    print(s5)
-    s6=s1.get_orfs_DNA()
-    print(s6)
-    s8=s1.get_orfs_Proteins()
-    print(s8)
-    s9=s1.protsInAA()
-    print(s9)
+    #s4 = s1.reverse_complement()
+    #print(s4)
+#     s5= s1.translate()
+#     print(s5)
+#     s6=s1.get_orfs_DNA()
+#     print(s6)
+#     s8=s1.get_orfs_Proteins()
+#     print(s8)
+#     s9=s1.protsInAA()
+#     print(s9)
+#     s10=s1.contagem()
+#     print(s10)
+    #s11=s1.__len__()
+    #print(s11)
+    s12=s1.letters()
+    print(s12)
     
 
     
